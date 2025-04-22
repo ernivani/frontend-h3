@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="120" height="40" viewBox="0 0 120 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M20 0H40L20 40H0L20 0Z" fill="currentColor" class="text-primary"/>
+  <path d="M40 0H60L40 40H20L40 0Z" fill="currentColor" class="text-primary" fill-opacity="0.7"/>
+  <text x="70" y="28" font-family="Arial" font-size="24" font-weight="bold" fill="currentColor" class="text-gray-900">H3</text>
+</svg> 

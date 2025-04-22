@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import axios from 'axios'
-import { API_URL } from '../config'
+
+const API_URL = 'http://localhost:8000/api'
 
 // Create axios instance with default config
 const api = axios.create({
@@ -14,9 +15,11 @@ const api = axios.create({
 })
 
 export const useAuthStore = defineStore('auth', () => {
-  const token = ref(localStorage.getItem('token') || null)
   const user = ref(null)
+  const token = ref(localStorage.getItem('token'))
+  
   const isAuthenticated = computed(() => !!token.value)
+  const isAdmin = computed(() => user.value?.role === 'admin')
 
   // Configure axios with token
   const setAxiosAuth = (tokenValue) => {
@@ -32,114 +35,69 @@ export const useAuthStore = defineStore('auth', () => {
     setAxiosAuth(token.value)
   }
 
-  const login = async (email, password) => {
+  async function login(email, password) {
     try {
-      const response = await api.post('/auth/login', {
-        email,
-        password
-      })
-      
-      // Vérifier si le token est présent dans la réponse
-      if (!response.data.token) {
-        throw new Error('Token non reçu du serveur')
-      }
-
+      const response = await api.post('/auth/login', { email, password })
       token.value = response.data.token
+      user.value = response.data.user
       localStorage.setItem('token', token.value)
       setAxiosAuth(token.value)
-      
-      // Fetch user profile after login
-      await fetchUserProfile()
-      
-      return response.data
+      return true
     } catch (error) {
       console.error('Login error:', error)
-      throw error
+      return false
     }
   }
 
-  const register = async (name, email, password) => {
+  async function register(userData) {
     try {
-      const response = await api.post('/auth/register', {
-        name,
-        email,
-        password
-      })
-      
-      // Vérifier si le token est présent dans la réponse
-      if (!response.data.token) {
-        throw new Error('Token non reçu du serveur')
-      }
-
+      const response = await api.post('/auth/register', userData)
       token.value = response.data.token
+      user.value = response.data.user
       localStorage.setItem('token', token.value)
       setAxiosAuth(token.value)
-      
-      // Fetch user profile after registration
-      await fetchUserProfile()
-      
-      return response.data
+      return true
     } catch (error) {
-      console.error('Registration error:', error)
-      throw error
+      console.error('Register error:', error)
+      return false
     }
   }
 
-  const logout = () => {
+  async function logout() {
     token.value = null
     user.value = null
     localStorage.removeItem('token')
     setAxiosAuth(null)
   }
 
-  const fetchUserProfile = async () => {
+  async function checkAuth() {
+    if (!token.value) return false
+    
     try {
       const response = await api.get('/users/me')
       user.value = response.data
-      return response.data
+      return true
     } catch (error) {
-      if (error.response?.status === 401) {
-        // Token invalide ou expiré
-        logout()
-      }
-      throw error
+      token.value = null
+      user.value = null
+      localStorage.removeItem('token')
+      return false
     }
   }
 
-  const updateProfile = async (userData) => {
-    try {
-      const response = await api.put('/users/me', userData)
-      user.value = response.data
-      
-      // La mise à jour du profil invalide le token actuel
-      // On déconnecte l'utilisateur pour qu'il se reconnecte
-      logout()
-      
-      return response.data
-    } catch (error) {
-      if (error.response?.status === 401) {
-        logout()
-      }
-      throw error
-    }
-  }
-
-  // Try to fetch user profile on page reload if token exists
+  // Initialize user data if token exists
   if (token.value) {
-    fetchUserProfile().catch(() => {
-      // If fetching profile fails, token might be invalid
-      logout()
-    })
+    checkAuth()
   }
 
   return {
-    token,
     user,
+    token,
     isAuthenticated,
+    isAdmin,
     login,
     register,
     logout,
-    fetchUserProfile,
-    updateProfile
+    checkAuth
   }
 }) 
