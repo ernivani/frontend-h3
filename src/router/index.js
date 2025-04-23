@@ -8,6 +8,8 @@ import AuthLayout from '@/layouts/AuthLayout.vue'
 import Account from '@/pages/Account.vue'
 import Orders from '@/pages/Orders.vue'
 import PrivacyPolicyPage from '@/pages/PrivacyPolicyPage.vue'
+import TermsOfService from '@/pages/TermsOfService.vue'
+import MentionsLegales from '@/pages/MentionsLegales.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -48,6 +50,16 @@ const router = createRouter({
       path: '/privacy-policy',
       name: 'privacy-policy',
       component: PrivacyPolicyPage
+    },
+    {
+      path: '/terms-of-service',
+      name: 'terms-of-service',
+      component: TermsOfService
+    },
+    {
+      path: '/mentions-legales',
+      name: 'mentions-legales',
+      component: MentionsLegales
     },
     {
       path: '/auth',

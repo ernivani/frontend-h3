@@ -113,6 +113,18 @@
               {{ loading ? 'Connexion...' : 'Se connecter' }}
             </button>
           </div>
+          
+          <!-- Legal links -->
+          <div class="mt-6 text-center text-xs text-gray-500">
+            En vous connectant, vous acceptez nos 
+            <router-link to="/terms-of-service" class="text-cyan-500 hover:text-cyan-600">
+              Conditions Générales d'Utilisation
+            </router-link>
+            et nos
+            <router-link to="/mentions-legales" class="text-cyan-500 hover:text-cyan-600">
+              Mentions Légales
+            </router-link>
+          </div>
         </form>
       </div>
     </div>

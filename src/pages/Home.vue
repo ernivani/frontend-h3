@@ -121,6 +121,28 @@
         </div>
       </div>
     </div>
+    
+    <!-- Footer with Legal Links -->
+    <footer class="py-12 bg-white">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex flex-col items-center">
+          <div class="flex flex-wrap justify-center gap-x-8 gap-y-4 text-sm text-gray-500">
+            <router-link to="/terms-of-service" class="hover:text-cyan-600 transition-colors font-medium">
+              Conditions Générales d'Utilisation
+            </router-link>
+            <router-link to="/mentions-legales" class="hover:text-cyan-600 transition-colors font-medium">
+              Mentions Légales
+            </router-link>
+            <router-link to="/privacy-policy" class="hover:text-cyan-600 transition-colors font-medium">
+              Politique de Confidentialité
+            </router-link>
+          </div>
+          <p class="mt-6 text-sm text-gray-400">
+            © {{ new Date().getFullYear() }} Cyna. Tous droits réservés.
+          </p>
+        </div>
+      </div>
+    </footer>
   </div>
 </template>
 

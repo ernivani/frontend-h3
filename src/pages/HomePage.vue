@@ -35,6 +35,21 @@
         </template>
       </div>
     </div>
+    
+    <!-- Footer with links -->
+    <footer class="mt-8 py-4 border-t border-gray-100">
+      <div class="flex flex-wrap justify-center gap-x-6 text-sm text-gray-500">
+        <router-link to="/terms-of-service" class="hover:text-cyan-600 transition-colors">
+          Conditions Générales d'Utilisation
+        </router-link>
+        <router-link to="/mentions-legales" class="hover:text-cyan-600 transition-colors">
+          Mentions Légales
+        </router-link>
+        <router-link to="/privacy-policy" class="hover:text-cyan-600 transition-colors">
+          Politique de Confidentialité
+        </router-link>
+      </div>
+    </footer>
   </MainLayout>
 </template>
 

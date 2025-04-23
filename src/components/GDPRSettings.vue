@@ -58,7 +58,7 @@
     </div>
 
     <!-- Delete Account Confirmation Modal -->
-    <div v-if="confirmDelete" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div v-if="confirmDelete" class="fixed inset-0 z-50 w-100 flex items-center justify-center bg-black bg-opacity-50">
       <div class="bg-white rounded-2xl p-8 max-w-lg w-full mx-4">
         <h3 class="text-2xl font-bold text-red-600 mb-4">Confirmation de suppression</h3>
         <p class="text-gray-600 mb-6">
@@ -89,6 +89,7 @@ import { ref, onMounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { ArrowDownTrayIcon as DownloadIcon, ShieldCheckIcon as ShieldLockIcon, TrashIcon } from '@heroicons/vue/24/outline'
 import { useRouter } from 'vue-router'
+import jsPDF from 'jspdf';
 
 const API_URL = 'http://localhost:8000'
 
@@ -184,42 +185,143 @@ const updateConsent = async (consent) => {
 
 const exportData = async () => {
   try {
-    isLoading.value = true
-    
+    isLoading.value = true;
+
     if (!auth.token) {
-      return
+      return;
     }
-    
+
     const response = await fetch(`${API_URL}/gdpr/export`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${auth.token}`
       }
-    })
-    
+    });
+
     if (!response.ok) {
-      throw new Error('Failed to export data')
+      throw new Error('Failed to export data');
     }
-    
-    const data = await response.json()
-    
-    // Create a downloadable file with the user's data
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `your-data-${new Date().toISOString().slice(0, 10)}.json`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-    
+
+    const data = await response.json();
+
+    // --- PDF Generation Logic ---
+    const doc = new jsPDF();
+    const margin = 15;
+    const lineHeight = 7; // Increased line height for better readability
+    let yPosition = margin;
+
+    const addText = (text, x, y, options = {}) => {
+      const { fontSize = 12, fontStyle = 'normal' } = options;
+      doc.setFontSize(fontSize);
+      doc.setFont('helvetica', fontStyle); // Using a standard font
+
+      // Split text if it exceeds page width
+      const maxWidth = doc.internal.pageSize.width - margin * 2;
+      const lines = doc.splitTextToSize(text, maxWidth);
+
+      lines.forEach(line => {
+        if (yPosition + lineHeight > doc.internal.pageSize.height - margin) {
+          doc.addPage();
+          yPosition = margin; // Reset y position for new page
+        }
+        doc.text(line, x, yPosition);
+        yPosition += lineHeight;
+      });
+      return lines.length * lineHeight; // Return the height added
+    };
+
+    // ---- Title ----
+    addText('Vos Données Personnelles', margin, yPosition, { fontSize: 18, fontStyle: 'bold' });
+    yPosition += lineHeight; // Add extra space after title
+
+    // ---- User Information ----
+    if (data.user) {
+      addText('Informations Utilisateur', margin, yPosition, { fontSize: 14, fontStyle: 'bold' });
+      yPosition += lineHeight / 2; // Smaller space after section title
+
+      const userDetails = [
+        `ID: ${data.user.id}`,
+        `Nom: ${data.user.name}`,
+        `Email: ${data.user.email}`,
+        `Créé le: ${new Date(data.user.created_at).toLocaleString('fr-FR')}`,
+        `Mis à jour le: ${new Date(data.user.updated_at).toLocaleString('fr-FR')}`
+      ];
+      userDetails.forEach(detail => addText(detail, margin + 5, yPosition, { fontSize: 10 }));
+      yPosition += lineHeight; // Add space after section
+    }
+
+    // ---- Login History ----
+    if (data.login_history && data.login_history.length > 0) {
+      addText('Historique de Connexion', margin, yPosition, { fontSize: 14, fontStyle: 'bold' });
+       yPosition += lineHeight / 2;
+
+      data.login_history.forEach((entry, index) => {
+         if (yPosition + (lineHeight * 4) > doc.internal.pageSize.height - margin) { // Check space before adding entry
+           doc.addPage();
+           yPosition = margin;
+           addText('Historique de Connexion (suite)', margin, yPosition, { fontSize: 14, fontStyle: 'bold' }); // Add title again on new page
+           yPosition += lineHeight / 2;
+         }
+        addText(`Connexion #${index + 1}`, margin + 5, yPosition, { fontSize: 11, fontStyle: 'bold' });
+        const loginDetails = [
+          `Date: ${new Date(entry.login_timestamp).toLocaleString('fr-FR')}`,
+          `Adresse IP: ${entry.ip_address}`,
+          // Handle potentially long user agent string
+        ];
+        loginDetails.forEach(detail => addText(detail, margin + 10, yPosition, { fontSize: 10 }));
+        // Add User Agent separately to handle wrapping
+        addText(`Agent Utilisateur: ${entry.user_agent}`, margin + 10, yPosition, { fontSize: 10});
+        yPosition += lineHeight / 2; // Space between entries
+      });
+      yPosition += lineHeight; // Add space after section
+    } else {
+         addText('Historique de Connexion', margin, yPosition, { fontSize: 14, fontStyle: 'bold' });
+         yPosition += lineHeight / 2;
+         addText('Aucun historique de connexion trouvé.', margin + 5, yPosition, { fontSize: 10 });
+         yPosition += lineHeight;
+    }
+
+
+    // ---- Data Processing Consents ----
+    // Check if data_processing_consents exists and has items before trying to access it
+    if (data.data_processing_consents && data.data_processing_consents.length > 0) {
+      addText('Consentements au Traitement des Données', margin, yPosition, { fontSize: 14, fontStyle: 'bold' });
+      yPosition += lineHeight / 2;
+
+      data.data_processing_consents.forEach((consent, index) => {
+         if (yPosition + (lineHeight * 3) > doc.internal.pageSize.height - margin) { // Check space before adding entry
+            doc.addPage();
+            yPosition = margin;
+            addText('Consentements (suite)', margin, yPosition, { fontSize: 14, fontStyle: 'bold' }); // Add title again on new page
+            yPosition += lineHeight / 2;
+         }
+        const consentDetails = [
+          `Objectif: ${consent.purpose}`,
+          `Accordé: ${consent.granted ? 'Oui' : 'Non'}`, // Assuming 'granted' is boolean
+          `Date: ${new Date(consent.timestamp).toLocaleString('fr-FR')}`, // Assuming 'timestamp'
+        ];
+        consentDetails.forEach(detail => addText(detail, margin + 5, yPosition, { fontSize: 10 }));
+         yPosition += lineHeight / 2; // Space between entries
+      });
+    } else {
+         // Handle case where consents are empty or don't exist
+         addText('Consentements au Traitement des Données', margin, yPosition, { fontSize: 14, fontStyle: 'bold' });
+         yPosition += lineHeight / 2;
+         addText('Aucun consentement trouvé.', margin + 5, yPosition, { fontSize: 10 });
+         yPosition += lineHeight;
+    }
+
+    // Trigger download
+    const fileName = `vos-donnees-${new Date().toISOString().slice(0, 10)}.pdf`;
+    doc.save(fileName);
+    // --- End PDF Generation Logic ---
+
   } catch (error) {
-    console.error('Error exporting data:', error)
+    console.error('Error exporting data:', error);
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
-}
+};
 
 const deleteAccount = async () => {
   try {
