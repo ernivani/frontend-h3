@@ -77,8 +77,45 @@
       </div>
       
       <!-- GDPR Settings Section -->
-      <div class="mt-8">
-        <GDPRSettings />
+      <div class="mt-12 space-y-12 animate-fade-in animation-delay-600">
+        <!-- Privacy Settings Tab Navigation -->
+        <div class="border-b border-gray-200">
+          <nav class="-mb-px flex space-x-8">
+            <button 
+              @click="activeTab = 'privacy'"
+              :class="[activeTab === 'privacy' ? 'border-cyan-500 text-cyan-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300', 'whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm']"
+            >
+              Confidentialité et données
+            </button>
+            <button 
+              @click="activeTab = 'consent-history'"
+              :class="[activeTab === 'consent-history' ? 'border-cyan-500 text-cyan-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300', 'whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm']"
+            >
+              Historique des consentements
+            </button>
+            <button 
+              @click="activeTab = 'data-retention'"
+              :class="[activeTab === 'data-retention' ? 'border-cyan-500 text-cyan-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300', 'whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm']"
+            >
+              Conservation des données
+            </button>
+          </nav>
+        </div>
+        
+        <!-- Tab Content -->
+        <div class="mt-6">
+          <div v-if="activeTab === 'privacy'">
+            <GDPRSettings />
+          </div>
+          
+          <div v-if="activeTab === 'consent-history'">
+            <ConsentHistory />
+          </div>
+          
+          <div v-if="activeTab === 'data-retention'">
+            <DataRetentionSettings />
+          </div>
+        </div>
       </div>
     </div>
       </div>
@@ -93,6 +130,8 @@ import { useAuthStore } from '../stores/auth'
 import { useRouter } from 'vue-router'
 import { UserIcon, ShieldCheckIcon } from '@heroicons/vue/24/outline'
 import GDPRSettings from '../components/GDPRSettings.vue'
+import ConsentHistory from '../components/ConsentHistory.vue'
+import DataRetentionSettings from '../components/DataRetentionSettings.vue'
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -103,6 +142,7 @@ const user = ref({
 
 const lastLoginDate = ref(new Date().toLocaleDateString('fr-FR'))
 const twoFactorEnabled = ref(false)
+const activeTab = ref('privacy')
 
 const editProfile = () => {
   // TODO: Implement edit profile functionality
@@ -138,6 +178,10 @@ const changePassword = () => {
 
 .animation-delay-400 {
   animation-delay: 0.4s;
+}
+
+.animation-delay-600 {
+  animation-delay: 0.6s;
 }
 
 @keyframes blob {
